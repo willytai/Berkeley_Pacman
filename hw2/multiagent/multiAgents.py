@@ -426,15 +426,15 @@ def betterEvaluationFunction(currentGameState):
       2. AVOID THE GHOSTS
 
          Avoid the game state that any of the ghosts are 1 grid apart from pacman even if pacman will get a
-         food or capsule (earn another 1 point for food or another 30 point for capsule) after going into this game state.
+         food or capsule (earn another 1 point for food or another 50 point for capsule) after going into this game state.
 
          The score will be evaluated as follow:
 
             AvoidGhostScore     if any of the ghosts are 1 grid apart from pacman
             -AvoidGhostScore    otherwise
 
-            where it will be safer to set AvoidGhostScore > 30
-            i.e. Set the wieght > 30
+            where it will be safer to set AvoidGhostScore > 50
+            i.e. Set the wieght > 50
 
             The weight was set to 100 in the end
 
@@ -455,7 +455,7 @@ def betterEvaluationFunction(currentGameState):
          The combination (A, B) = (0.1, 0.9) works well in the end.
 
          To make finding capsules prior to finding foods, simply set the weight of this term high.
-         After testing, setting the weight 30 works fine.
+         After testing, setting the weight 50 works fine.
 
     """
     "*** YOUR CODE HERE ***"
@@ -477,7 +477,7 @@ def betterEvaluationFunction(currentGameState):
 
     FinalScore            = 0
     FoodScoreWeight       = 1
-    CombinedTermWeight    = 30
+    CombinedTermWeight    = 50
     AvoidGhostScoreWeight = 100
 
     # AVOID GHOSTS
