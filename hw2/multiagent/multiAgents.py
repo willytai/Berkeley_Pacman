@@ -360,7 +360,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             for action in ACTIONS:
                 # pacman takes its turn; ghosts' turn next
                 # ghost index starts from 1
-                score = MinAgent(state.generateSuccessor(PACMAN, action), 1, depth, alpha, beta)
+                score = ChanceAgent(state.generateSuccessor(PACMAN, action), 1, depth, alpha, beta)
                 ScoreActionPairs.append((score, action))
                 BestScore = max(BestScore, score)
 
@@ -381,7 +381,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             if depth == 0: return BestAction
             else: return BestScore
 
-        def MinAgent(state, ghost, depth, alpha, beta): # this is for ghosts
+        def ChanceAgent(state, ghost, depth, alpha, beta): # this is for ghosts
             if state.isWin() or state.isLose(): return self.evaluationFunction(state)
             ACTIONS    = state.getLegalActions(ghost)
             BestAction = Directions.STOP
@@ -390,9 +390,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
                 if ghost == state.getNumAgents()-1: # the last ghost moves, next step will be taken by pacman
                     if depth == self.depth - 1: score = self.evaluationFunction(state.generateSuccessor(ghost, action))
                     else: score = MaxAgent(state.generateSuccessor(ghost, action), depth+1, alpha, beta)
-                else: score = MinAgent(state.generateSuccessor(ghost, action), ghost+1, depth, alpha, beta)
-                # pruning
-                # if BestScore <= alpha: return BestScore
+                else: score = ChanceAgent(state.generateSuccessor(ghost, action), ghost+1, depth, alpha, beta)
                 beta = min(beta, score)
                 AveScore += score
             return float(AveScore) / float(count+1)
@@ -427,7 +425,7 @@ def betterEvaluationFunction(currentGameState):
 
       2. AVOID THE GHOSTS
 
-         Avoid the game state that any of the ghosts are 1 grid apart from pacman even if pacman will eat a
+         Avoid the game state that any of the ghosts are 1 grid apart from pacman even if pacman will get a
          food or capsule (earn another 1 point for food or another 30 point for capsule) after going into this game state.
 
          The score will be evaluated as follow:
