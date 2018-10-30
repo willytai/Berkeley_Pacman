@@ -292,7 +292,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             if state.isWin() or state.isLose(): return self.evaluationFunction(state)
             ACTIONS    = state.getLegalActions(PACMAN)
             BestAction = Directions.STOP # default is stop
-            BestScore  = -99999
+            BestScore  = float('-inf')
             ScoreActionPairs = list()
             for action in ACTIONS:
                 # pacman takes its turn; ghosts' turn next
@@ -321,7 +321,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             if state.isWin() or state.isLose(): return self.evaluationFunction(state)
             ACTIONS    = state.getLegalActions(ghost)
             BestAction = Directions.STOP
-            BestScore  = 99999
+            BestScore  = float('inf')
             for action in ACTIONS:
                 if ghost == state.getNumAgents()-1: # the last ghost moves, next step will be taken by pacman
                     if depth == self.depth - 1: score = self.evaluationFunction(state.generateSuccessor(ghost, action))
