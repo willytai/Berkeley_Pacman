@@ -522,7 +522,6 @@ def betterEvaluationFunction(currentGameState):
     ScaredGhostNum = len(chase_ghost_index)
     MinCapsuleDist = float('inf')
     MinChaseDist   = float('inf')
-    SumChaseDist   = 0
     MaxCapsuleNum  = MAX_DIST_OF_MAP
     MaxScaredGhostNum = MAX_DIST_OF_MAP
 
@@ -535,7 +534,6 @@ def betterEvaluationFunction(currentGameState):
         pos = curGhosts[index]
         dist = mazeDistance(curPos, (int(pos[0]), int(pos[1])), currentGameState)
         MinChaseDist = min(MinChaseDist, dist)
-        SumChaseDist += dist
         if MinChaseDist == 1: break
     if MinChaseDist == float('inf'): MinChaseDist = 0 # to avoid score goes to -inf
 

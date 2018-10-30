@@ -1,0 +1,85 @@
+My evalutation function is based on three different terms
+
+1. Always avoid the ghosts                                      -> highest priority
+2. Target the capsules and chase ghosts after eating a capsule  -> second priority
+3. Target the nearest food                                      -> least priority
+
+
+The final score of the evaluation function will be the summation over
+the score of these three terms (after multiplied by some weight) respectively.
+
+
+The score for 1. is defined as follow:
+
+	If the ghost is within one grid, then you get a temporary score of '-1'.
+	If the ghost is NOT within one grid, then the temporary score is '1'.
+
+	The interpretation of this design is that to make pacman avoid the situation where it is NEXT TO the ghosts, otherwise, it's okay.
+	Before adding to the final score, the temporary score will be multiplied by a wegiht to make this the highest priority.
+
+	The weight was simply set to 100.
+
+
+
+The score for 2. is defined as follow:
+
+	GhostNum       -> Number of ghosts
+	ScaredGhostNum -> Number of scared ghost currently
+	MaxCapsuleNum  -> Maximum number of capsules in the map
+	CurCapsuleNum  -> Current number of capusles left in the map
+	MaxMapDist     -> Maximum distance of the map (width x height)
+	MinCapsuleDist -> Minimum distance to the nearest capsule
+	MinChaseDist   -> Minimum distnace to the nearest ghost
+
+	First, I defined the highest score of this term: MaxCapsuleNum.
+	When all the capsules on the map are eaten, the score of this term should be MaxCapsuleNum.
+
+	Second, I defined the cost that represents the distance between the current game state and the state where all the capsules are eaten.
+	In order to make pacamn chase the ghost instead of finding another capsule after eating one (at least one ghost remains scared), I
+	divided this cost into two parts: ChaseGhostCost and FindCapsuleCost.
+
+	ChaseGhostCost:
+
+		The smaller the distance to the nearest ghost, the lower the cost.
+		The fewer the scared ghosts, the lower the cost.
+
+		ChaseGhostCost = (ScaredGhostNum-1 + MinChaseDist/MaxMapDist)/GhostNum
+
+		The purpose of dividing GhostNum is to normalize the cost to the range of 0 to 1.
+		The reason of doing so is to make ChaseGhostCost and FindCapsuleCost comparable.
+
+	FindCapsuleCost:
+
+		The closer to the nearest capsule, the lower the cost.
+
+		FindCapsuleCost = MinCapsuleDist/MaxMapDist (would be in the range of 0 to 1)
+
+	Finally,
+			
+			(MaxCapsuleNum - CurCapsuleNum) - A*FindCapsuleCost - B*ChaseGhostCost, where A << B, A+B=1, A>0, B>0
+	
+	will be the score of this term.
+
+	A was set to 0.1 and B was set to 0.9 in the end.
+	By doing so, the cost of chasing scared ghosts would effect the score more than the cost of finding the next capusle.
+	Because MinMaxSearch returns the highest score of the game state, pacman will chase all of the scared ghosts before eating
+	the next capsule.
+
+	Before adding to the final score, it will be multiplied by a weight as well.
+
+	The weight was set to 50.
+
+
+
+The score for 3. is defined as follow:
+
+	MaxFoodNum  -> Maximum number of food in the map
+	CurFoodNum  -> Current number of food left in the map
+	MinFoodDist -> Minimum distance between pacman and a nearest food
+
+	Similar to 2., the fewer the food, the higher the score.
+	The closer to the nearest food, the higher the score.
+
+	(MaxFoodNum - CurFoodNum) - MinFoodDist/MaxMapDist
+
+	This term is just weighted by 1 before adding to the final score.
