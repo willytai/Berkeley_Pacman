@@ -83,3 +83,6 @@ The score for 3. is defined as follow:
 	(MaxFoodNum - CurFoodNum) - MinFoodDist/MaxMapDist
 
 	This term is just weighted by 1 before adding to the final score.
+
+
+It takes approximately 20 seconds to finish the map 'smallClassic' with an average score of more than 1700.
