@@ -460,12 +460,86 @@ def betterEvaluationFunction(currentGameState):
     """
     "*** YOUR CODE HERE ***"
 
+    # replace these with mazeDistance
+    def FindNearestFood(gameState):
+
+        walls = gameState.getWalls()
+        foods = gameState.getFood()
+
+        if len(foods.asList()) == 0: return None, 0
+
+        explored = set()
+        Q = util.Queue()
+        Q.push((gameState.getPacmanPosition(), 0))
+
+        while not Q.isEmpty():
+            (x, y), path = Q.pop()
+            if foods[x][y]: return (x, y), path
+            successor = list()
+            if not walls[x+1][y]: successor.append((x+1, y))
+            if not walls[x-1][y]: successor.append((x-1, y))
+            if not walls[x][y+1]: successor.append((x, y+1))
+            if not walls[x][y-1]: successor.append((x, y-1))
+            for suc in successor:
+                if suc in explored: continue
+                Q.push((suc, path+1))
+                explored.add(suc)
+
+    def FindNearestCapsule(gameState):
+
+        walls    = gameState.getWalls()
+        capsules = gameState.getCapsules()
+
+        if len(capsules) == 0: return None, 0
+
+        explored = set()
+        Q = util.Queue()
+        Q.push((gameState.getPacmanPosition(), 0))
+
+        while not Q.isEmpty():
+            (x, y), path = Q.pop()
+            if (x, y) in capsules: return (x, y), path
+            successor = list()
+            if not walls[x+1][y]: successor.append((x+1, y))
+            if not walls[x-1][y]: successor.append((x-1, y))
+            if not walls[x][y+1]: successor.append((x, y+1))
+            if not walls[x][y-1]: successor.append((x, y-1))
+            for suc in successor:
+                if suc in explored: continue
+                Q.push((suc, path+1))
+                explored.add(suc)
+
+    def FindNearestChaseableGhost(gameState, templist):
+
+        walls    = gameState.getWalls()
+        chaselist = list()
+        for x, y in templist:
+            chaselist.append((int(x), int(y)))
+
+        if len(chaselist) == 0: return None, 0
+
+        explored = set()
+        Q = util.Queue()
+        Q.push((gameState.getPacmanPosition(), 0))
+
+        while not Q.isEmpty():
+            (x, y), path = Q.pop()
+            if (x, y) in chaselist: return (x, y), path
+            successor = list()
+            if not walls[x+1][y]: successor.append((x+1, y))
+            if not walls[x-1][y]: successor.append((x-1, y))
+            if not walls[x][y+1]: successor.append((x, y+1))
+            if not walls[x][y-1]: successor.append((x, y-1))
+            for suc in successor:
+                if suc in explored: continue
+                Q.push((suc, path+1))
+                explored.add(suc)
+
+
     # avoid entering the losing state
     # this is essential
-    if currentGameState.isLose(): return -99999
+    if currentGameState.isLose(): return -999999
     
-    from searchAgents import mazeDistance
-
     curPos      = currentGameState.getPacmanPosition()   # pacman
     curCapsules = currentGameState.getCapsules()         # capsules positions
     curFood     = currentGameState.getFood()             # food grid
@@ -502,46 +576,29 @@ def betterEvaluationFunction(currentGameState):
         ghost_to_avoid.add((int(pos[0]), int(pos[1])))
     if AvoidGhostScore is None: AvoidGhostScore = 1
 
-    # print 'AvoidGhostScore', AvoidGhostScore
     FinalScore += AvoidGhostScore*AvoidGhostScoreWeight
 
-    # GET FOOD
-    MinFoodDist = float('inf')
-    MaxFoodNum  = MAX_DIST_OF_MAP
-    for f in curFood.asList():
-        if f not in ghost_to_avoid: MinFoodDist = min(MinFoodDist, mazeDistance(curPos, f, currentGameState))
-        if MinFoodDist == 1: break # minima found, don't continue searching
-    if MinFoodDist == float('inf'): MinFoodDist = 0 # to avoid score goes to -inf
-    # THIS IS VERY IMPORTANT!!!!!!!
-    FoodScore = (MaxFoodNum-curFood.count()) - float(MinFoodDist)/float(MAX_DIST_OF_MAP)
 
-    FinalScore += FoodScoreWeight*FoodScore
+    # GET FOOD
+    _, MinFoodDist = FindNearestFood(currentGameState)
+    MaxFoodNum     = MAX_DIST_OF_MAP
+    FoodScore      = (MaxFoodNum-curFood.count()) - float(MinFoodDist)/float(MAX_DIST_OF_MAP)
+
+    FinalScore    += FoodScoreWeight*FoodScore
+
 
     # FIND CAPSULES COMBINED WITH CHASE GHOST
-    TotalGhostNum  = len(curGhosts)
-    ScaredGhostNum = len(chase_ghost_index)
-    MinCapsuleDist = float('inf')
-    MinChaseDist   = float('inf')
-    MaxCapsuleNum  = MAX_DIST_OF_MAP
+    TotalGhostNum     = len(curGhosts)
+    ScaredGhostNum    = len(chase_ghost_index)
+    _, MinCapsuleDist = FindNearestCapsule(currentGameState)
+    _, MinChaseDist   = FindNearestChaseableGhost(currentGameState, [curGhosts[index] for index in chase_ghost_index])
+    MaxCapsuleNum     = MAX_DIST_OF_MAP
     MaxScaredGhostNum = MAX_DIST_OF_MAP
 
-    for cap in curCapsules:
-        MinCapsuleDist = min(MinCapsuleDist, mazeDistance(curPos, cap, currentGameState))
-        if MinCapsuleDist == 1: break
-    if MinCapsuleDist == float('inf'): MinCapsuleDist = 0 # to avoid score goes to -inf after all capsules are eaten!
+    ChaseGhostCost    = (ScaredGhostNum-1 + float(MinChaseDist)/float(MAX_DIST_OF_MAP)) / float(TotalGhostNum)
+    CapsuleScore      = (MaxCapsuleNum-len(curCapsules)) - float(MinCapsuleDist)/float(MAX_DIST_OF_MAP)*0.1 - ChaseGhostCost*0.9
 
-    for index in chase_ghost_index:
-        pos = curGhosts[index]
-        dist = mazeDistance(curPos, (int(pos[0]), int(pos[1])), currentGameState)
-        MinChaseDist = min(MinChaseDist, dist)
-        if MinChaseDist == 1: break
-    if MinChaseDist == float('inf'): MinChaseDist = 0 # to avoid score goes to -inf
-
-    ChaseGhostCost = (ScaredGhostNum-1 + float(MinChaseDist)/float(MAX_DIST_OF_MAP)) / float(TotalGhostNum)
-    CapsuleScore = (MaxCapsuleNum-len(curCapsules)) - float(MinCapsuleDist)/float(MAX_DIST_OF_MAP)*0.1 - ChaseGhostCost*0.9
-
-    # print 'combined score', CapsuleScore
-    FinalScore += CombinedTermWeight*CapsuleScore
+    FinalScore       += CombinedTermWeight*CapsuleScore
 
     return FinalScore
     util.raiseNotDefined()
