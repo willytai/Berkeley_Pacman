@@ -74,9 +74,88 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        from searchAgents import mazeDistance
-        DistEvalFunc = mazeDistance
-        DistEvalFunc = util.manhattanDistance
+        def FindNearestFood(refPos):
+
+            walls  = currentGameState.getWalls()
+            foods  = currentGameState.getFood()
+            ghosts = currentGameState.getGhostPositions()
+            x, y   = refPos
+
+            if len(foods.asList()) == 0: return 0
+            if foods[x][y]: return 0
+
+            explored = set()
+            Q = util.Queue()
+            Q.push((refPos, 0))
+
+            while not Q.isEmpty():
+                (x, y), dist = Q.pop()
+                if foods[x][y] and (x, y) not in ghosts: return dist
+                successor = list()
+                if not walls[x+1][y]: successor.append((x+1, y))
+                if not walls[x-1][y]: successor.append((x-1, y))
+                if not walls[x][y+1]: successor.append((x, y+1))
+                if not walls[x][y-1]: successor.append((x, y-1))
+                for suc in successor:
+                    if suc in explored: continue
+                    Q.push((suc, dist+1))
+                    explored.add(suc)
+
+        def FindNearestChaseableGhost(refPos, templist):
+            
+            walls = currentGameState.getWalls()
+            chaselist = list()
+            for x, y in templist: chaselist.append((int(x), int(y)))
+
+            if len(chaselist) == 0: return 0
+            if (x, y) in templist: return 0
+
+            explored = set()
+            Q = util.Queue()
+            Q,push((refPos, 0))
+
+            while not Q.isEmpty():
+                (x, y), dist = Q.pop()
+                if (x, y) in chaselist: return dist
+                successor = list()
+                if not walls[x+1][y]: successor.append((x+1, y))
+                if not walls[x-1][y]: successor.append((x-1, y))
+                if not walls[x][y+1]: successor.append((x, y+1))
+                if not walls[x][y-1]: successor.append((x, y-1))
+                for suc in successor:
+                    if suc in explored: continue
+                    Q.push((suc, dist+1))
+                    explored.add(suc)
+
+        def FindNearestCapsule(refPos):
+
+            walls    = currentGameState.getWalls()
+            capsules = currentGameState.getCapsules()
+
+            if len(capsules) == 0: return 0
+
+            explored = set()
+            Q = util.Queue()
+            Q.push((refPos, 0))
+
+            while not Q.isEmpty():
+                (x, y), dist = Q.pop()
+                if (x, y) in capsules: return dist
+                successor = list()
+                if not walls[x+1][y]: successor.append((x+1, y))
+                if not walls[x-1][y]: successor.append((x-1, y))
+                if not walls[x][y+1]: successor.append((x, y+1))
+                if not walls[x][y-1]: successor.append((x, y-1))
+                for suc in successor:
+                    if suc in explored: continue
+                    Q.push((suc, dist+1))
+                    explored.add(suc)
+
+        def check(refPos, ghost):
+
+           dist = util.manhattanDistance(refPos, ghost) 
+           if dist <= 1: return False
+           return True
 
         curPos      = currentGameState.getPacmanPosition()   # pacman
         curCapsules = currentGameState.getCapsules()         # capsules positions
@@ -105,29 +184,17 @@ class ReflexAgent(Agent):
             if times == 0: avoid_ghost_index.append(i)
             else: chase_ghost_index.append(i)
 
-        newMinGhostDist = 99999
-
         for index in avoid_ghost_index:
-            pos     = curGhosts[index]
-            # newDist = DistEvalFunc(newPos, (int(pos[0]), int(pos[1])), currentGameState)
-            newDist = DistEvalFunc(newPos, (int(pos[0]), int(pos[1])))
-            if newDist <= 1: avoid_ghost_score = -1
+            pos = curGhosts[index]
+            if not check(newPos, (int(pos[0]), int(pos[1]))): avoid_ghost_score = -1
             ghost_to_avoid.add((int(pos[0]), int(pos[1])))
-
         if avoid_ghost_score is None: avoid_ghost_score = 1
 
         FinalScore += avoid_ghost_score*avoid_ghost_weight
         
         # MOVE TOWARD NEAREST FOOD, BUT AVOID THE FOOD WITH THE GHOST ON IT
-        curMinFoodDist = 99999
-        newMinFoodDist = 99999
-        
-        for f in curFood.asList():
-            if f not in ghost_to_avoid:
-                # curMinFoodDist = min(curMinFoodDist, DistEvalFunc(curPos, f, currentGameState))
-                curMinFoodDist = min(curMinFoodDist, DistEvalFunc(curPos, f))
-                # newMinFoodDist = min(newMinFoodDist, DistEvalFunc(newPos, f, currentGameState))
-                newMinFoodDist = min(newMinFoodDist, DistEvalFunc(newPos, f))
+        curMinFoodDist = FindNearestFood(curPos)
+        newMinFoodDist = FindNearestFood(newPos)
 
         if newMinFoodDist < curMinFoodDist: get_to_food_score = 1
         elif newMinFoodDist == curMinFoodDist: get_to_food_score = 0
@@ -136,16 +203,8 @@ class ReflexAgent(Agent):
         FinalScore += get_to_food_score*get_to_food_weight
 
         # CHASE THE NEAREST CHASEABLE GHOST
-        chase_ghost_score = 0
-        newMinChaseDist = 99999
-        curMinChaseDist = 99999
-
-        for index in chase_ghost_index:
-            pos = curGhosts[index]
-            # newMinChaseDist = min(newMinChaseDist, DistEvalFunc(newPos, (int(pos[0]), int(pos[1])), currentGameState))
-            newMinChaseDist = min(newMinChaseDist, DistEvalFunc(newPos, (int(pos[0]), int(pos[1]))))
-            # curMinChaseDist = min(curMinChaseDist, DistEvalFunc(curPos, (int(pos[0]), int(pos[1])), currentGameState))
-            curMinChaseDist = min(curMinChaseDist, DistEvalFunc(curPos, (int(pos[0]), int(pos[1]))))
+        curMinChaseDist = FindNearestChaseableGhost(curPos, [curGhosts[index] for index in chase_ghost_index])
+        newMinChaseDist = FindNearestChaseableGhost(newPos, [curGhosts[index] for index in chase_ghost_index])
 
         if newMinChaseDist < curMinChaseDist: chase_ghost_score = 1
         elif newMinChaseDist == curMinChaseDist: chase_ghost_score = 0
@@ -164,14 +223,8 @@ class ReflexAgent(Agent):
 
         if find_capsules:
 
-            curMinCapsuleDist = 99999
-            newMinCapsuleDist = 99999
-
-            for cap in curCapsules:
-                # curMinCapsuleDist = min(curMinCapsuleDist, DistEvalFunc(curPos, cap, currentGameState))
-                curMinCapsuleDist = min(curMinCapsuleDist, DistEvalFunc(curPos, cap))
-                # newMinCapsuleDist = min(newMinCapsuleDist, DistEvalFunc(newPos, cap, currentGameState))
-                newMinCapsuleDist = min(newMinCapsuleDist, DistEvalFunc(newPos, cap))
+            curMinCapsuleDist = FindNearestCapsule(curPos)
+            newMinCapsuleDist = FindNearestCapsule(newPos)
 
             if newMinCapsuleDist < curMinCapsuleDist: get_to_capsules_score = 1
             elif newMinCapsuleDist == curMinCapsuleDist: get_to_capsules_score = 0
@@ -463,8 +516,9 @@ def betterEvaluationFunction(currentGameState):
     # replace these with mazeDistance
     def FindNearestFood(gameState):
 
-        walls = gameState.getWalls()
-        foods = gameState.getFood()
+        walls  = gameState.getWalls()
+        foods  = gameState.getFood()
+        ghosts = gameState.getGhostPositions()
 
         if len(foods.asList()) == 0: return None, 0
 
@@ -474,7 +528,7 @@ def betterEvaluationFunction(currentGameState):
 
         while not Q.isEmpty():
             (x, y), path = Q.pop()
-            if foods[x][y]: return (x, y), path
+            if foods[x][y] and (x, y) not in ghosts: return (x, y), path
             successor = list()
             if not walls[x+1][y]: successor.append((x+1, y))
             if not walls[x-1][y]: successor.append((x-1, y))
@@ -484,6 +538,8 @@ def betterEvaluationFunction(currentGameState):
                 if suc in explored: continue
                 Q.push((suc, path+1))
                 explored.add(suc)
+
+        return None, path
 
     def FindNearestCapsule(gameState):
 
