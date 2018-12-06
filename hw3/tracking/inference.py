@@ -265,6 +265,14 @@ class ParticleFilter(InferenceModule):
         weight with each position) is incorrect and may produce errors.
         """
         "*** YOUR CODE HERE ***"
+        self.particles = list()
+        Add = True
+        while Add:
+            for pos in self.legalPositions:
+                self.particles.append(pos)
+                if len(self.particles) == self.numParticles:
+                    Add = False
+                    break
 
     def observe(self, observation, gameState):
         """
@@ -297,7 +305,26 @@ class ParticleFilter(InferenceModule):
         emissionModel = busters.getObservationDistribution(noisyDistance)
         pacmanPosition = gameState.getPacmanPosition()
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if noisyDistance is None:
+        	self.particles = [self.getJailPosition()] * self.numParticles
+        	return
+
+        allPossible = util.Counter()
+        oldBeliefs  = self.getBeliefDistribution()
+
+        for pos in self.legalPositions:
+        	dist = util.manhattanDistance(pos, pacmanPosition)
+        	if emissionModel[dist] > 0:
+        		allPossible[pos] = emissionModel[dist] * oldBeliefs[pos]
+        # allPossible.normalize()
+        if not any(allPossible.values()):
+        	self.initializeUniformly(gameState)
+        	return
+        self.particles = []
+        for i in range(self.numParticles):
+        	self.particles.append(util.sample(allPossible))
+
+        # util.raiseNotDefined()
 
     def elapseTime(self, gameState):
         """
@@ -314,7 +341,8 @@ class ParticleFilter(InferenceModule):
         a belief distribution.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.particles = list(map(lambda x : util.sample(self.getPositionDistribution(self.setGhostPosition(gameState, x))), self.particles))
+        # util.raiseNotDefined()
 
     def getBeliefDistribution(self):
         """
@@ -324,7 +352,11 @@ class ParticleFilter(InferenceModule):
         Counter object)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        belief = util.Counter()
+        for p in self.particles:
+            belief[p] += 1
+        belief.normalize()
+        return belief
 
 class MarginalInference(InferenceModule):
     """
@@ -397,6 +429,16 @@ class JointParticleFilter:
         weight with each position) is incorrect and may produce errors.
         """
         "*** YOUR CODE HERE ***"
+        self.particles = list()
+        self.all_valid_tuple = list(itertools.permutations([p for p in self.legalPositions], self.numGhosts))
+        random.shuffle(self.all_valid_tuple)
+        Add = True
+        while Add:
+            for tpl in self.all_valid_tuple:
+                self.particles.append(tpl)
+                if len(self.particles) == self.numParticles:
+                    Add = False
+            if not Add: break
 
     def addGhostAgent(self, agent):
         """
@@ -444,6 +486,23 @@ class JointParticleFilter:
         emissionModels = [busters.getObservationDistribution(dist) for dist in noisyDistances]
 
         "*** YOUR CODE HERE ***"
+        allPossible = util.Counter()
+        oldBeliefs  = self.getBeliefDistribution()
+        for tpl in self.all_valid_tuple:
+            weight = 1
+            for i, pos in enumerate(list(tpl)):
+                if weight == 0.0: break
+                if noisyDistances[i] is not None:
+                    weight *= emissionModels[i][util.manhattanDistance(pos, pacmanPosition)]
+                else:
+                    if pos != self.getJailPosition(i): weight = 0.0
+            allPossible[tpl] = weight * oldBeliefs[tpl]
+        if not any(allPossible.values()):
+            self.initializeUniformly(gameState)
+            return
+        self.particles = []
+        for i in range(self.numParticles):
+            self.particles.append(util.sample(allPossible))
 
     def getParticleWithGhostInJail(self, particle, ghostIndex):
         """
@@ -505,12 +564,20 @@ class JointParticleFilter:
 
             "*** YOUR CODE HERE ***"
 
+            print self.ghostAgents
+            assert False
+
             "*** END YOUR CODE HERE ***"
             newParticles.append(tuple(newParticle))
         self.particles = newParticles
 
     def getBeliefDistribution(self):
         "*** YOUR CODE HERE ***"
+        belief = util.Counter()
+        for p in self.particles:
+            belief[p] += 1.0
+        belief.normalize()
+        return belief
         util.raiseNotDefined()
 
 # One JointInference module is shared globally across instances of MarginalInference
