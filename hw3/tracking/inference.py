@@ -306,23 +306,18 @@ class ParticleFilter(InferenceModule):
         pacmanPosition = gameState.getPacmanPosition()
         "*** YOUR CODE HERE ***"
         if noisyDistance is None:
-        	self.particles = [self.getJailPosition()] * self.numParticles
-        	return
+            self.particles = [self.getJailPosition()] * self.numParticles
+            return
 
         allPossible = util.Counter()
-        oldBeliefs  = self.getBeliefDistribution()
-
-        for pos in self.legalPositions:
-        	dist = util.manhattanDistance(pos, pacmanPosition)
-        	if emissionModel[dist] > 0:
-        		allPossible[pos] = emissionModel[dist] * oldBeliefs[pos]
-        # allPossible.normalize()
+        for particle in self.particles:
+            allPossible[particle] += emissionModel[util.manhattanDistance(particle, pacmanPosition)]
         if not any(allPossible.values()):
-        	self.initializeUniformly(gameState)
-        	return
+            self.initializeUniformly(gameState)
+            return
         self.particles = []
         for i in range(self.numParticles):
-        	self.particles.append(util.sample(allPossible))
+            self.particles.append(util.sample(allPossible))
 
         # util.raiseNotDefined()
 
@@ -430,7 +425,7 @@ class JointParticleFilter:
         """
         "*** YOUR CODE HERE ***"
         self.particles = list()
-        self.all_valid_tuple = list(itertools.permutations([p for p in self.legalPositions], self.numGhosts))
+        self.all_valid_tuple = list(itertools.product([p for p in self.legalPositions], repeat=self.numGhosts))
         random.shuffle(self.all_valid_tuple)
         Add = True
         while Add:
@@ -487,18 +482,16 @@ class JointParticleFilter:
 
         "*** YOUR CODE HERE ***"
         allPossible = util.Counter()
-        oldBeliefs  = self.getBeliefDistribution()
-        for tpl in self.all_valid_tuple:
+        for particle in self.particles:
             weight = 1
-            for i, pos in enumerate(list(tpl)):
-                if weight == 0.0: break
+            for i, pos in enumerate(list(particle)):
                 if noisyDistances[i] is not None:
                     weight *= emissionModels[i][util.manhattanDistance(pos, pacmanPosition)]
                 else:
-                    if pos != self.getJailPosition(i): weight = 0.0
-            allPossible[tpl] = weight * oldBeliefs[tpl]
+                    particle = self.getParticleWithGhostInJail(particle, i)
+            allPossible[particle] += weight
         if not any(allPossible.values()):
-            self.initializeUniformly(gameState)
+            self.initializeParticles()
             return
         self.particles = []
         for i in range(self.numParticles):
@@ -563,10 +556,8 @@ class JointParticleFilter:
             # now loop through and update each entry in newParticle...
 
             "*** YOUR CODE HERE ***"
-
-            print self.ghostAgents
-            assert False
-
+            for i, pos in enumerate(newParticle):
+                newParticle[i] = util.sample(getPositionDistributionForGhost(setGhostPositions(gameState, newParticle), i, self.ghostAgents[i]))
             "*** END YOUR CODE HERE ***"
             newParticles.append(tuple(newParticle))
         self.particles = newParticles
