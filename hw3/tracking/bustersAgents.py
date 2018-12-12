@@ -163,31 +163,9 @@ class GreedyBustersAgent(BustersAgent):
             [beliefs for i, beliefs in enumerate(self.ghostBeliefs)
              if livingGhosts[i+1]]
         "*** YOUR CODE HERE ***"
-
-        # Do BFS once
-        def getActionToClosestGhost(ghostPositions):
-            walls = gameState.getWalls()
-            explored = set()
-            Q = util.Queue()
-            Q.push((pacmanPosition, []))
-            while not Q.isEmpty():
-                curPos, path = Q.pop()
-                if curPos in ghostPositions:
-                    if len(path) < 1: Directions.STOP
-                    else: return path[0]
-                successor = list()
-                x, y = curPos
-                if not walls[x][y+1]: successor.append(((x, y+1), Directions.NORTH))
-                if not walls[x][y-1]: successor.append(((x, y-1), Directions.SOUTH))
-                if not walls[x+1][y]: successor.append(((x+1, y), Directions.EAST))
-                if not walls[x-1][y]: successor.append(((x-1, y), Directions.WEST))
-                for suc, action in successor:
-                    if len(path) == 0 and action not in legal: continue
-                    if suc in explored: continue
-                    Q.push((suc, path+[action]))
-                    explored.add(suc)
-
-        livingGhostEstimatePos = [ distr.argMax() for distr in livingGhostPositionDistributions]
-        return getActionToClosestGhost(livingGhostEstimatePos)
+        livingGhostEstimatePos = [ distr.argMax() for distr in livingGhostPositionDistributions ]
+        nearestGhost = min(livingGhostEstimatePos, key = lambda x : self.distancer.getDistance(x, pacmanPosition))
+        result = min(legal, key = lambda x: self.distancer.getDistance(nearestGhost, Actions.getSuccessor(pacmanPosition, x)))
+        return result
 
         util.raiseNotDefined()

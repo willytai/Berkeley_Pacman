@@ -227,7 +227,7 @@ class ExactInference(InferenceModule):
         for oldPos in self.legalPositions:
             newPosDist = self.getPositionDistribution(self.setGhostPosition(gameState, oldPos))
             for newPos, Prob in newPosDist.items():
-                allPossible[newPos] += Prob * self.beliefs[newPos]
+                allPossible[newPos] += Prob * self.beliefs[oldPos]
 
         allPossible.normalize()
         self.beliefs = allPossible
@@ -315,9 +315,7 @@ class ParticleFilter(InferenceModule):
         if not any(allPossible.values()):
             self.initializeUniformly(gameState)
             return
-        self.particles = []
-        for i in range(self.numParticles):
-            self.particles.append(util.sample(allPossible))
+        self.particles = util.nSample([v[1] for v in allPossible.items()], [v[0] for v in allPossible.items()], self.numParticles)
 
         # util.raiseNotDefined()
 
