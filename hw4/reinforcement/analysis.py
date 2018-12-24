@@ -21,41 +21,41 @@
 
 def question2():
     answerDiscount = 0.9
-    answerNoise = 0.2
+    answerNoise = 0.001
     return answerDiscount, answerNoise
 
 def question3a(): #prefer the close exit (+1), risking the cliff (-10)
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.3
+    answerNoise = 0.0
+    answerLivingReward = 0.0
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
 def question3b(): #Prefer the close exit (+1), but avoiding the cliff (-10)
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.3
+    answerNoise = 0.1
+    answerLivingReward = 0.1
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
 def question3c(): #Prefer the distant exit (+10), risking the cliff (-10)
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.9
+    answerNoise = 0.0
+    answerLivingReward = 0.0
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
 def question3d(): #Prefer the distant exit (+10), avoiding the cliff (-10)
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.9
+    answerNoise = 0.1
+    answerLivingReward = 0.1
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
 def question3e(): #living earns reward->stuck
-    answerDiscount = None
-    answerNoise = None
-    answerLivingReward = None
+    answerDiscount = 0.99
+    answerNoise = 0.1
+    answerLivingReward = 0.9
     return answerDiscount, answerNoise, answerLivingReward
     # If not possible, return 'NOT POSSIBLE'
 
