@@ -43,6 +43,7 @@ class QLearningAgent(ReinforcementAgent):
         ReinforcementAgent.__init__(self, **args)
 
         "*** YOUR CODE HERE ***"
+        self.QTable = util.Counter()
 
     def getQValue(self, state, action):
         """
@@ -51,6 +52,7 @@ class QLearningAgent(ReinforcementAgent):
           or the Q node value otherwise
         """
         "*** YOUR CODE HERE ***"
+        return self.QTable[(state, action)]
         util.raiseNotDefined()
 
 
@@ -63,6 +65,9 @@ class QLearningAgent(ReinforcementAgent):
         """
         # You may use self.getLegalActions(state)
         "*** YOUR CODE HERE ***"
+        legalActions = self.getLegalActions(state)
+        if len(legalActions) == 0: return 0
+        return max([ self.getQValue(state, x) for x in legalActions ])
         util.raiseNotDefined()
 
     def computeActionFromQValues(self, state):
@@ -72,6 +77,9 @@ class QLearningAgent(ReinforcementAgent):
           you should return None.
         """
         "*** YOUR CODE HERE ***"
+        legalActions = self.getLegalActions(state)
+        if len(legalActions) == 0: return None
+        return max([ (self.getQValue(state, x), x) for x in legalActions ], key=lambda x : x[0])[1]
         util.raiseNotDefined()
 
     def getAction(self, state):
@@ -89,9 +97,11 @@ class QLearningAgent(ReinforcementAgent):
         legalActions = self.getLegalActions(state)
         action = None
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
-        return action
+        if len(legalActions) == 0: return action
+        if util.flipCoin(self.epsilon):
+            return random.choice(legalActions)
+        else:
+            return self.computeActionFromQValues(state)
 
     def update(self, state, action, nextState, reward):
         """
@@ -103,7 +113,11 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        legalActions = self.getLegalActions(nextState)
+        if len(legalActions) != 0: MAX = max([self.QTable[nextState, x] for x in legalActions])
+        else: MAX = 0
+        self.QTable[(state, action)] = self.QTable[(state, action)] + self.alpha*(reward + self.discount*MAX - self.QTable[(state, action)])
+        # util.raiseNotDefined()
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
