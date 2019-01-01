@@ -114,9 +114,7 @@ class QLearningAgent(ReinforcementAgent):
         """
         "*** YOUR CODE HERE ***"
         legalActions = self.getLegalActions(nextState)
-        if len(legalActions) != 0: MAX = max([self.QTable[nextState, x] for x in legalActions])
-        else: MAX = 0
-        self.QTable[(state, action)] = self.getQValue(state, action) + self.alpha*(reward + self.discount*MAX - self.getQValue(state, action))
+        self.QTable[(state, action)] = self.getQValue(state, action) + self.alpha*(reward + self.discount*self.getValue(nextState) - self.getQValue(state, action))
         # util.raiseNotDefined()
 
     def getPolicy(self, state):
@@ -181,7 +179,8 @@ class ApproximateQAgent(PacmanQAgent):
         """
         # Use self.featExtractor.getFeatures(state,action) to get the features
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.weights * self.featExtractor.getFeatures(state, action)
+        # util.raiseNotDefined()
 
     def update(self, state, action, nextState, reward):
         """
@@ -189,7 +188,11 @@ class ApproximateQAgent(PacmanQAgent):
         """
         # You may use self.getLegalActions(state) and self.getQValue(state,action)
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        legalActions = self.getLegalActions(nextState)
+        dif = reward + self.discount*self.getValue(nextState) - self.getQValue(state, action)
+        for key, value in self.featExtractor.getFeatures(state, action).items():
+            self.weights[key] = self.weights[key] + self.alpha*dif*value
+        # util.raiseNotDefined()
 
     def final(self, state):
         "Called at the end of each game."

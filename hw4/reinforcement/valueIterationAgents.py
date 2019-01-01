@@ -53,7 +53,7 @@ class ValueIterationAgent(ValueEstimationAgent):
             for stt in AllStates:
                 if self.mdp.isTerminal(stt): continue
                 PossibleActions = self.mdp.getPossibleActions(stt)
-                temp[stt] = max([ self.computeQValueFromValues(stt, act) for act in PossibleActions ])
+                temp[stt] = max([ self.getQValue(stt, act) for act in PossibleActions ])
             self.values = temp
 
     def getValue(self, state): #utility
